@@ -1,0 +1,153 @@
+#Simple project using tkinter and sqlite (employees database)
+
+import sqlite3
+from tkinter import *
+
+class DB:
+	def __init__(self):
+		self.conn = sqlite3.connect("myemployees.db")
+		self.cursor = self.conn.cursor()
+		self.conn.execute("CREATE TABLE IF NOT EXISTS employees(id INTEGER PRIMARY KEY,name TEXT,city TEXT,salary TEXT)")
+		self.conn.commit()
+		
+	def __del__(self):
+		self.conn.close()  #close connection
+	
+	def view(self):
+		self.cursor.execute("SELECT * FROM employees")
+		rows = self.cursor.fetchall()
+		return rows
+		
+	def insert(self,name,city,salary):
+		self.cursor.execute("INSERT INTO employees VALUES(NULL,?,?,?)",(name,city,salary))
+		self.conn.commit()
+		self.view()
+	
+	def search(self,name="",city="",salary=""):
+		self.cursor.execute("SELECT * FROM employees WHERE name=? OR city=? OR salary=?",(name,city,salary))
+		found_rows = self.cursor.fetchall()
+		return found_rows
+		self.view()
+		
+	def update(self,id,name,city,salary):
+		self.cursor.execute("UPDATE employees set name=?, city=?, salary=? WHERE id=?",(name,city,salary,id))
+		self.view()
+		
+	def delete(self,id):
+		self.cursor.execute("DELETE from employees where id=?",(id,))
+		self.conn.commit()
+		self.view()
+		
+db = DB()
+
+def get_selected_row(event):
+	global selected_tuple
+	index = list1.curselection()[0]
+	selected_tuple = list1.get(index)
+	e1.delete(0, END)
+	e1.insert(END, selected_tuple[1])
+	e2.delete(0, END)
+	e2.insert(END, selected_tuple[2])
+	e3.delete(0, END)
+	e3.insert(END, selected_tuple[3])
+	
+def view_command():
+    list1.delete(0, END)
+    for row in db.view():
+        list1.insert(END, row)
+
+
+def search_command():
+    list1.delete(0, END)
+    for row in db.search(name_text.get(), city_text.get(), salary_text.get()):
+        list1.insert(END, row)
+
+
+def add_command():
+    db.insert(name_text.get(), city_text.get(), salary_text.get())
+    list1.delete(0, END)
+    list1.insert(END, (name_text.get(), city_text.get(), salary_text.get()))
+
+
+def delete_command():
+    db.delete(selected_tuple[0])
+
+
+def update_command():
+    db.update(selected_tuple[0], name_text.get(), city_text.get(), salary_text.get())	
+
+
+	
+window = Tk()
+
+window.title("employees DATABASE")
+window.geometry('810x500')
+
+def on_closing():
+    dd = db
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        window.destroy()
+        del dd
+
+
+window.protocol("WM_DELETE_WINDOW", on_closing)  # handle window closing
+
+l1 = Label(window,fg="white",bg='grey',height=2,width=60 ,text="name")
+l1.grid(row=0, column=0)
+
+l2 = Label(window,fg="white",bg='grey',height=2,width=60 , text="city")
+l2.grid(row=2, column=0)
+
+l3 = Label(window,fg="white",bg='grey',height=2,width=60 , text="salary")
+l3.grid(row=4, column=0)
+
+name_text = StringVar()
+e1 = Entry(window,fg="white",bg='black',width = '60', textvariable=name_text)
+e1.grid(row=0, column=3)
+
+city_text = StringVar()
+e2 = Entry(window,fg="white",bg='black',width = '60', textvariable=city_text)
+e2.grid(row=2, column=3)
+
+salary_text = StringVar()
+e3 = Entry(window,fg="white",bg='black',width = '60', textvariable=salary_text)
+e3.grid(row=4, column=3)
+
+list1 = Listbox(window,fg="white",bg='black', height=8,width=70 ,)
+list1.grid(row=7, column=0, rowspan=6, columnspan=2)
+
+sb1 = Scrollbar(window)
+sb1.grid(row=7, column=2, rowspan=6)
+
+list1.configure(yscrollcommand=sb1.set)
+sb1.configure(command=list1.yview)
+
+
+list1.bind('<<ListboxSelect>>', get_selected_row)
+
+b1 = Button(window, text="View all",fg="white",bg='green', width=50, command=view_command)
+b1.grid(row=7, column=3)
+
+b2 = Button(window, text="Search entry",fg="white",bg='green', width=50, command=search_command)
+b2.grid(row=8, column=3)
+
+b3 = Button(window, text="Add entry",fg="white",bg='green', width=50, command=add_command)
+b3.grid(row=9, column=3)
+
+b4 = Button(window, text="Update selected",fg="white",bg='green', width=50, command=update_command)
+b4.grid(row=10, column=3)
+
+b5 = Button(window, text="Delete selected",fg="white",bg='green', width = 50, command=delete_command)
+b5.grid(row=11, column=3)
+
+b6 = Button(window, text="Close",fg="white",bg='green', width = 50, command=window.destroy)
+b6.grid(row=12, column=3)
+
+logo = PhotoImage(file = "E1.png")
+g1 = Label(image = logo)
+g1.grid(row = 13,column = 0,columnspan=4)
+
+window.mainloop()
+	
+	
+		
